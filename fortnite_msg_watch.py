@@ -1,16 +1,6 @@
 import fortnitepy
 import csv
-import re
-import cld2
-
-
-def make_pattern(filename):
-    words = []
-    with open(filename, "r") as file:
-        for line in file:
-            words.append(line.strip('\n'))
-    s_pattern = r"\b(" + "|".join(words).strip("|") + r")\b"
-    return re.compile(s_pattern, re.IGNORECASE)
+import lang_pattern
 
 
 class MyClient(fortnitepy.Client):
@@ -36,26 +26,23 @@ class MyClient(fortnitepy.Client):
 
     async def event_friend_message(self, message):
         print(f'Received message from {message.author.display_name} | Content: "{message.content}"')
-        lang_details = cld2.detect(message.content)
-        if lang_details[2][0][1] == "en" or lang_details[2][0][1] == "un":
-            if re.search(pattern, message.content):
-                await message.reply("LANGUAGE ALERT")
-                with open('FortniteLog.tsv', 'a', newline='') as tsv_file:
-                    tsv_writer = csv.writer(tsv_file, delimiter='\t')
-                    tsv_writer.writerow(
-                        [str(message.created_at), message.author.display_name, message.content, 'friend message'])
+        match = lang_pattern.check_message(message.content, lang_pattern.make_pattern("pattern_file.txt"), "en")
+        if match:
+            await message.reply("LANGUAGE ALERT")
+            with open('FortniteLog.tsv', 'a', newline='') as tsv_file:
+                tsv_writer = csv.writer(tsv_file, delimiter='\t')
+                tsv_writer.writerow(
+                    [str(message.created_at), message.author.display_name, message.content, 'friend message', match])
 
     async def event_party_message(self, message):
         print(f'Received message from {message.author.display_name} | Content: "{message.content}"')
-        lang_details = cld2.detect(message.content)
-        if lang_details[2][0][1] == "en" or lang_details[2][0][1] == "un":
-            print(lang_details[2][0][1])
-            if re.search(pattern, message.content):
-                await message.reply("LANGUAGE ALERT")
-                with open('FortniteLog.tsv', 'a', newline='') as tsv_file:
-                    tsv_writer = csv.writer(tsv_file, delimiter='\t')
-                    tsv_writer.writerow(
-                        [str(message.created_at), message.author.display_name, message.content, 'party message'])
+        match = lang_pattern.check_message(message.content, lang_pattern.make_pattern("pattern_file.txt"), "en")
+        if match:
+            await message.reply("LANGUAGE ALERT")
+            with open('FortniteLog.tsv', 'a', newline='') as tsv_file:
+                tsv_writer = csv.writer(tsv_file, delimiter='\t')
+                tsv_writer.writerow(
+                    [str(message.created_at), message.author.display_name, message.content, 'party message', match])
 
 
 def main():
@@ -64,5 +51,4 @@ def main():
 
 
 if __name__ == "__main__":
-    pattern = make_pattern("pattern_file.txt")
     main()
